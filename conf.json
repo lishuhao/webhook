@@ -1,0 +1,10 @@
+{
+  "ListenPort":":9000",
+  "Repos":[
+    {
+      "RepoName":"your repo name",
+      "WorkPath":"/path/to/git/repo/dir/",
+      "Secret":"your password"
+    }
+  ]
+}
