@@ -38,12 +38,6 @@ func init() {
 	json.Unmarshal(content, &conf)
 }
 
-func main() {
-	http.HandleFunc("/", handle)
-
-	log.Fatal(http.ListenAndServe(conf.ListenPort, nil))
-}
-
 func handle(w http.ResponseWriter, r *http.Request) {
 	url := strings.Trim(r.URL.Path, "/")
 	if url == "" {
@@ -79,4 +73,10 @@ func handle(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, cmd+" 执行错误："+err.Error())
 	}
 	fmt.Fprintln(w, string(out))
+}
+
+func main() {
+	http.HandleFunc("/", handle)
+
+	log.Fatal(http.ListenAndServe(conf.ListenPort, nil))
 }
