@@ -71,6 +71,7 @@ func handle(w http.ResponseWriter, r *http.Request) {
 	out, err := exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
 		fmt.Fprintln(w, cmd+" 执行错误："+err.Error())
+		return
 	}
 	fmt.Fprintln(w, string(out))
 }
