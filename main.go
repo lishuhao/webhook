@@ -50,8 +50,8 @@ func handle(w http.ResponseWriter, r *http.Request) {
 			MatchRepo = true
 			WorkPath = item.WorkPath
 			Secret = item.Secret
+			break
 		}
-		break
 	}
 	if !MatchRepo {
 		fmt.Fprintln(w, "404")
