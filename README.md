@@ -15,7 +15,9 @@ go get github.com/lishuhao/webhook
 ```bash
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build 【-o 指定程序名】 main.go
 ```
-3 . 后台运行
+3 . cp conf.simple.json conf.json
+
+4 . 后台运行
 ```bash
 command >out.file 2>&1 &
 ```
