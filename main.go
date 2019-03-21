@@ -3,11 +3,12 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-	"github.com/json-iterator/go"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"os/exec"
 	"strings"
 )
@@ -21,59 +22,87 @@ type Repo struct {
 	RepoName string //仓库名
 	WorkPath string //项目路径
 	Secret   string //webhook 密钥
+	Command  string //go 程序需要的额外命令：1、删除旧程序2、编译新程序3、重启程序
 }
 
-var json = jsoniter.ConfigCompatibleWithStandardLibrary
+//码云推送的post数据
+type PostBody struct {
+	Password string
+}
 
 var conf Conf
-var WorkPath = ""
-var Secret = ""
-var MatchRepo = false //是否匹配
+
+//匹配的仓库
+var matchRepo Repo
 
 func init() {
 	content, err := ioutil.ReadFile("conf.json")
 	if err != nil {
 		log.Fatal(err)
 	}
-	json.Unmarshal(content, &conf)
+	err = json.Unmarshal(content, &conf)
+	if err != nil {
+		log.Fatalln("解析json错误：", err)
+	}
 }
 
 func handle(w http.ResponseWriter, r *http.Request) {
 	url := strings.Trim(r.URL.Path, "/")
 	if url == "" {
-		fmt.Fprintln(w, "404")
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
 	for _, item := range conf.Repos {
 		if item.RepoName == url {
-			MatchRepo = true
-			WorkPath = item.WorkPath
-			Secret = item.Secret
+			matchRepo = item
 			break
 		}
 	}
-	if !MatchRepo {
-		fmt.Fprintln(w, "404")
+	if matchRepo.RepoName == "" {
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
 	//检查密码
+	var postBody PostBody
 	body, _ := ioutil.ReadAll(r.Body)
-	pwd := jsoniter.Get(body, "password").ToString()
-	if pwd != Secret {
-		fmt.Fprintln(w, "密码错误")
+	err := json.Unmarshal(body, &postBody)
+	if err != nil {
+		_, _ = fmt.Fprintln(w, "解析post数据错误：", err)
 		return
 	}
 
-	cmd := fmt.Sprintf("cd %s && git pull 2>&1", WorkPath)
-	//cmd := fmt.Sprintf("whoami", WorkPath)
-	out, err := exec.Command("bash", "-c", cmd).Output()
-	if err != nil {
-		fmt.Fprintln(w, cmd+" 执行错误："+err.Error())
+	if postBody.Password != matchRepo.Secret {
+		w.WriteHeader(http.StatusForbidden)
 		return
 	}
-	fmt.Fprintln(w, string(out))
+
+	//切换到代码仓库跟路径
+	err = os.Chdir(matchRepo.WorkPath)
+	if err != nil {
+		_, _ = fmt.Fprintln(w, "切换路径错误：", err)
+		return
+	}
+	//git pull
+	out, err := exec.Command("bash", "-c", "git pull 2>&1").Output()
+	if err != nil {
+		_, _ = fmt.Fprintln(w, "git pull 执行错误："+err.Error())
+		return
+	}
+	_, _ = fmt.Fprintln(w, string(out))
+
+	///--------------- php 语言仓库到此结束---------------
+	if matchRepo.Command == "" {
+		return
+	}
+
+	//go 程序需要的额外命令：1、删除旧程序2、编译新程序3、重启程序
+	out, err = exec.Command("bash", "-c", matchRepo.Command).Output()
+	if err != nil {
+		_, _ = fmt.Fprintln(w, "bash执行错误："+err.Error())
+		return
+	}
 }
 
 func main() {
