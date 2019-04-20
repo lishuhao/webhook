@@ -5,7 +5,7 @@
       "RepoName":"your repo name",
       "WorkPath":"/path/to/git/repo/dir/",
       "Secret":"your password",
-      "Command": "rm diary_api && go build -o diary_api && supervisorctl restart diary_api"
+      "Command": "go build -o diary_api && supervisorctl restart diary_api"
     }
   ]
 }
