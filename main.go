@@ -108,7 +108,7 @@ func handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//go 程序需要的额外命令：1、删除旧程序2、编译新程序3、重启程序
+	//go 程序需要的额外命令：1、编译新程序 2、重启程序
 	out, err = exec.Command("bash", "-c", matchRepo.Command).Output()
 	if err != nil {
 		log.Println("command 执行错误：", err, string(out))
